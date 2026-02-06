@@ -1,0 +1,1 @@
+{"version":2,"builds":[{"src":"package.json","use":"@vercel/static-build","config":{"distDir":"build","buildCommand":"npm run build"}}],"routes":[{"src":"/(.*)","dest":"/index.html"}],"env":{"YOUR_ENV_VARIABLE":"value" /* Add other environment variables here */},"headers":[{"source":"/(.*)","headers":[{"key":"Cache-Control","value":"max-age=3600"}]}]}
