@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "start-local": "NEXT_PUBLIC_API_URL=http://127.0.0.1:8000 next dev -p 3000"
   },
   "dependencies": {
     "next": "^16.1.6",
