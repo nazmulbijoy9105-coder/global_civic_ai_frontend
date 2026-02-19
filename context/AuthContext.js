@@ -1,50 +1,41 @@
-'use client';
+"use client";
+import { createContext, useContext, useState, useEffect } from "react";
+import { getCurrentUser } from "../lib/api";
 
-import { createContext, useContext, useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { loginUser, registerUser } from '../lib/api';
-
-const AuthContext = createContext();
+const AuthContext = createContext({});
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
+  const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
 
   useEffect(() => {
-    // If you want to fetch current user, add a getCurrentUser function in lib/api.js
-    setLoading(false);
+    const savedToken = localStorage.getItem("token");
+    if (savedToken) {
+      setToken(savedToken);
+      getCurrentUser(savedToken)
+        .then((u) => { if (u?.id) setUser(u); else logout(); })
+        .catch(() => logout())
+        .finally(() => setLoading(false));
+    } else {
+      setLoading(false);
+    }
   }, []);
 
-  const login = async (credentials) => {
-    try {
-      const data = await loginUser(credentials);
-      setUser(data);
-      router.push('/dashboard');
-      return { success: true };
-    } catch (error) {
-      return { success: false, error: error.message };
-    }
-  };
-
-  const signup = async (userData) => {
-    try {
-      const data = await registerUser(userData);
-      setUser(data);
-      router.push('/dashboard');
-      return { success: true };
-    } catch (error) {
-      return { success: false, error: error.message };
-    }
+  const login = (accessToken, userData) => {
+    localStorage.setItem("token", accessToken);
+    setToken(accessToken);
+    setUser(userData);
   };
 
   const logout = () => {
+    localStorage.removeItem("token");
+    setToken(null);
     setUser(null);
-    router.push('/login');
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, signup, logout }}>
+    <AuthContext.Provider value={{ user, token, login, logout, loading, isAuthenticated: !!user }}>
       {children}
     </AuthContext.Provider>
   );
