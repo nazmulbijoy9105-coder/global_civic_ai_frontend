@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { loginUser, getCurrentUser } from "../../lib/api";
 import { useAuth } from "../../context/AuthContext";
+import Navbar from "../components/Navbar";
 
 export default function LoginPage() {
   const { login } = useAuth();
