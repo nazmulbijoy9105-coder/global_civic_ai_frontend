@@ -65,11 +65,11 @@ export default function AdminPage() {
 
         {tab === "users" && (
           <div style={styles.tableWrap}>
-            <div style={styles.tableHeader}>
+            <div style={styles.tableHeaderUsers}>
               <span style={styles.th}>ID</span><span style={styles.th}>Username</span><span style={styles.th}>Email</span><span style={styles.th}>Admin</span>
             </div>
             {users.map((u) => (
-              <div key={u.id} style={styles.tableRow}>
+              <div key={u.id} style={styles.tableRowUsers}>
                 <span style={styles.td}>{u.id}</span>
                 <span style={styles.td}>{u.username}</span>
                 <span style={styles.td}>{u.email}</span>
@@ -82,11 +82,11 @@ export default function AdminPage() {
 
         {tab === "sessions" && (
           <div style={styles.tableWrap}>
-            <div style={styles.tableHeader}>
+            <div style={styles.tableHeaderSessions}>
               <span style={styles.th}>ID</span><span style={styles.th}>User ID</span><span style={styles.th}>Status</span><span style={styles.th}>Questions</span><span style={styles.th}>Date</span>
             </div>
             {sessions.map((s) => (
-              <div key={s.id} style={styles.tableRow}>
+              <div key={s.id} style={styles.tableRowSessions}>
                 <span style={styles.td}>{s.id}</span>
                 <span style={styles.td}>{s.user_id}</span>
                 <span style={styles.td}><span style={{ padding: "2px 8px", borderRadius: 4, fontSize: 12, fontWeight: 600, background: s.status === "completed" ? "rgba(0,200,150,0.15)" : "rgba(234,179,8,0.15)", color: s.status === "completed" ? "#00C896" : "#EAB308" }}>{s.status}</span></span>
@@ -115,8 +115,10 @@ const styles = {
   statValue: { fontFamily: "'Syne', sans-serif", fontSize: 32, fontWeight: 800, color: "#0A1628" },
   statLabel: { fontSize: 13, color: "#64748B", marginTop: 4 },
   tableWrap: { background: "#fff", borderRadius: 16, overflow: "hidden", boxShadow: "0 2px 20px rgba(0,0,0,0.04)" },
-  tableHeader: { display: "grid", gridTemplateColumns: "60px 1fr 1fr 80px", padding: "14px 20px", background: "#0A1628" },
-  tableRow: { display: "grid", gridTemplateColumns: "60px 1fr 1fr 80px", padding: "14px 20px", borderBottom: "1px solid #F1F5F9", alignItems: "center" },
+    tableHeaderUsers: { display: "grid", gridTemplateColumns: "60px 1fr 1fr 80px", padding: "14px 20px", background: "#0A1628" },
+    tableRowUsers: { display: "grid", gridTemplateColumns: "60px 1fr 1fr 80px", padding: "14px 20px", borderBottom: "1px solid #F1F5F9", alignItems: "center" },
+    tableHeaderSessions: { display: "grid", gridTemplateColumns: "60px 80px 100px 100px 1fr", padding: "14px 20px", background: "#0A1628" },
+    tableRowSessions: { display: "grid", gridTemplateColumns: "60px 80px 100px 100px 1fr", padding: "14px 20px", borderBottom: "1px solid #F1F5F9", alignItems: "center" },
   th: { fontSize: 12, fontWeight: 600, color: "#94A3B8", textTransform: "uppercase" },
   td: { fontSize: 14, color: "#374151" },
   empty: { padding: "24px", textAlign: "center", color: "#64748B" },
