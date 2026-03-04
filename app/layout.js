@@ -9,7 +9,13 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body>
+      <head>
+        <link
+          href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600;700&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body style={{ margin: 0, fontFamily: "'DM Sans', sans-serif" }}>
         <AuthProvider>
           {children}
         </AuthProvider>
