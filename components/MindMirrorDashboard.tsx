@@ -1,5 +1,7 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
-import GlassCard from '../components/GlassCard';
+import GlassCard from './GlassCard';
 import { Zap, AlertCircle, TrendingUp, BarChart3 } from 'lucide-react';
 
 interface AssessmentQuestion {
@@ -16,10 +18,15 @@ interface CivicNode {
   lastUpdate: string;
 }
 
+const BACKEND_URL = 'https://tunai-backend.onrender.com';
+
 export default function MindMirrorDashboard() {
   const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [seedingComplete, setSeedingComplete] = useState(true);
+  const [loading, setLoading] = useState(false);
+  
+  // Fallback questions (used if API fails)
   const [questions, setQuestions] = useState<AssessmentQuestion[]>([
     {
       id: 'q1',
@@ -48,11 +55,91 @@ export default function MindMirrorDashboard() {
     { id: 'node-4', name: 'Analytics Engine', status: 'idle', lastUpdate: '12m ago' },
   ]);
 
-  const currentQuestion = questions[currentQuestionIdx];
-  const progressPercent = ((currentQuestionIdx + 1) / questions.length) * 100;
+  // FETCH QUESTIONS FROM BACKEND
+  useEffect(() => {
+    const fetchQuestions = async () => {
+      setLoading(true);
+      try {
+        const response = await fetch(`${BACKEND_URL}/api/questions`, {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log('✅ Questions fetched from backend:', data);
+          
+          // Handle both array and object responses
+          const questionsArray = Array.isArray(data) ? data : data.questions || [];
+          if (questionsArray.length > 0) {
+            setQuestions(questionsArray);
+          }
+        } else {
+          console.warn('⚠️ Backend returned status:', response.status);
+        }
+      } catch (error) {
+        console.warn('⚠️ Backend unavailable, using fallback questions:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const handleAnswerSelect = (option: string) => {
+    fetchQuestions();
+  }, []);
+
+  // FETCH CIVIC NODES FROM BACKEND
+  useEffect(() => {
+    const fetchNodes = async () => {
+      try {
+        const response = await fetch(`${BACKEND_URL}/api/nodes`, {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log('✅ Civic nodes fetched from backend:', data);
+          
+          const nodesArray = Array.isArray(data) ? data : data.nodes || [];
+          if (nodesArray.length > 0) {
+            setCivicNodes(nodesArray);
+          }
+        }
+      } catch (error) {
+        console.warn('⚠️ Could not fetch nodes from backend:', error);
+      }
+    };
+
+    fetchNodes();
+  }, []);
+
+  const currentQuestion = questions[currentQuestionIdx] || questions[0];
+  const progressPercent = questions.length > 0 ? ((currentQuestionIdx + 1) / questions.length) * 100 : 0;
+
+  const handleAnswerSelect = async (option: string) => {
     setSelectedAnswer(option);
+    
+    // SUBMIT ANSWER TO BACKEND
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/assessment/answer`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          questionId: currentQuestion.id,
+          answer: option,
+          timestamp: new Date().toISOString(),
+        }),
+      });
+      
+      if (response.ok) {
+        console.log('✅ Answer submitted to backend successfully');
+      } else {
+        console.warn('⚠️ Backend submission returned:', response.status);
+      }
+    } catch (error) {
+      console.error('❌ Failed to submit answer to backend:', error);
+    }
+
     setTimeout(() => {
       if (currentQuestionIdx < questions.length - 1) {
         setCurrentQuestionIdx(currentQuestionIdx + 1);
@@ -62,6 +149,10 @@ export default function MindMirrorDashboard() {
   };
 
   const activeNodesCount = civicNodes.filter(n => n.status === 'active').length;
+
+  if (!currentQuestion) {
+    return <div className="text-white text-center p-8">Loading dashboard...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-charcoal-200 via-charcoal-100 to-charcoal-100 text-white font-sans p-4 md:p-8 selection:bg-cyanAccent/30">
@@ -84,11 +175,12 @@ export default function MindMirrorDashboard() {
             <p className="text-gray-500 mt-3 tracking-widest uppercase text-xs md:text-[10px] font-medium">
               Cognitive Intelligence Dashboard
             </p>
+            {loading && <p className="text-xs text-cyanAccent mt-2">Loading data from backend...</p>}
           </div>
 
           {/* Status Bar */}
           <div className="text-right w-full md:w-auto">
-            <span className="text-xs text-gray-500 block mb-2 font-medium">Seeding Status</span>
+            <span className="text-xs text-gray-500 block mb-2 font-medium">Backend Status</span>
             <div className="h-2 w-full md:w-40 bg-charcoal-50 rounded-full overflow-hidden border border-white/10">
               <div 
                 className="h-full bg-gradient-to-r from-violetAccent via-cyanAccent to-violetAccent transition-all duration-500 ease-out animate-pulse-subtle"
@@ -96,7 +188,7 @@ export default function MindMirrorDashboard() {
               ></div>
             </div>
             <span className="text-xs text-cyanAccent mt-2 block font-medium">
-              {seedingComplete ? '✓ Complete' : 'In Progress'}
+              {seedingComplete ? '✓ Connected' : 'Connecting...'}
             </span>
           </div>
         </div>
@@ -169,7 +261,6 @@ export default function MindMirrorDashboard() {
 
         {/* Civic AI Data Feed Integration */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
-          {/* Active Nodes Card */}
           <GlassCard glow>
             <div className="flex items-start justify-between">
               <div>
@@ -181,7 +272,6 @@ export default function MindMirrorDashboard() {
             </div>
           </GlassCard>
 
-          {/* Total Questions Card */}
           <GlassCard glow>
             <div className="flex items-start justify-between">
               <div>
@@ -193,7 +283,6 @@ export default function MindMirrorDashboard() {
             </div>
           </GlassCard>
 
-          {/* Response Rate Card */}
           <GlassCard glow>
             <div className="flex items-start justify-between">
               <div>
@@ -205,7 +294,6 @@ export default function MindMirrorDashboard() {
             </div>
           </GlassCard>
 
-          {/* System Health Card */}
           <GlassCard glow>
             <div className="flex items-start justify-between">
               <div>
@@ -246,7 +334,7 @@ export default function MindMirrorDashboard() {
       {/* Footer */}
       <footer className="max-w-7xl mx-auto mt-16 pt-8 border-t border-white/5">
         <p className="text-xs text-gray-600 tracking-widest uppercase">
-          MindMirror AI · Cognitive Intelligence Platform · Global Civic AI Initiative
+          MindMirror AI · Cognitive Intelligence Platform · Backend: {BACKEND_URL}
         </p>
       </footer>
     </div>

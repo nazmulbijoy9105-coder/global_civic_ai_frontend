@@ -2,10 +2,11 @@
 import { useState } from "react";
 import { loginUser, getCurrentUser } from "../../lib/api";
 import { useAuth } from "../../context/AuthContext";
-import Navbar from "../components/Navbar";
+import { useRouter } from "next/navigation"; // Better for Next.js than window.location
 
 export default function LoginPage() {
   const { login } = useAuth();
+  const router = useRouter();
   const [formData, setFormData] = useState({ username: "", password: "" });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -30,19 +31,23 @@ export default function LoginPage() {
     if (!validate()) return;
     setLoading(true);
     setServerError("");
+
     try {
       const result = await loginUser(formData);
+      
+      // If backend returns 401 or 422, result will have a 'detail' field
       if (result.access_token) {
         const userData = await getCurrentUser(result.access_token);
         login(result.access_token, userData);
-        window.location.href = "/dashboard";
+        router.push("/dashboard");
       } else {
         setServerError(result.detail || "Invalid username or password.");
       }
-    } catch {
-      setServerError("Could not connect to server. Please try again.");
+    } catch (error) {
+      setServerError("Could not connect to Global Civic AI. Please check your connection.");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
@@ -54,9 +59,11 @@ export default function LoginPage() {
         input:focus { outline: none; border-color: #00C896 !important; box-shadow: 0 0 0 3px rgba(0,200,150,0.15); }
         @keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
         .submit-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,200,150,0.4) !important; }
-        .link:hover { color: #00C896 !important; }
+        .submit-btn:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
+        .link:hover { color: #00C896 !important; transition: color 0.2s; }
       `}</style>
 
+      {/* Left Section: Branding */}
       <div style={styles.left}>
         <div style={styles.leftContent}>
           <div style={styles.badge}>GLOBAL CIVIC AI</div>
@@ -80,6 +87,7 @@ export default function LoginPage() {
         </div>
       </div>
 
+      {/* Right Section: Form */}
       <div style={styles.right}>
         <div style={styles.card}>
           <div style={{ marginBottom: 32 }}>
@@ -93,23 +101,31 @@ export default function LoginPage() {
           </div>
 
           <form onSubmit={handleSubmit}>
-            {[
-              { name: "username", label: "Username", type: "text", placeholder: "Your username" },
-              { name: "password", label: "Password", type: "password", placeholder: "Your password" },
-            ].map(({ name, label, type, placeholder }) => (
-              <div key={name} style={styles.field}>
-                <label style={styles.label}>{label}</label>
-                <input
-                  name={name}
-                  type={type}
-                  placeholder={placeholder}
-                  value={formData[name]}
-                  onChange={handleChange}
-                  style={{ ...styles.input, ...(errors[name] ? styles.inputError : {}) }}
-                />
-                {errors[name] && <span style={styles.error}>{errors[name]}</span>}
-              </div>
-            ))}
+            <div style={styles.field}>
+              <label style={styles.label}>Username</label>
+              <input
+                name="username"
+                type="text"
+                placeholder="Your username"
+                value={formData.username}
+                onChange={handleChange}
+                style={{ ...styles.input, ...(errors.username ? styles.inputError : {}) }}
+              />
+              {errors.username && <span style={styles.error}>{errors.username}</span>}
+            </div>
+
+            <div style={styles.field}>
+              <label style={styles.label}>Password</label>
+              <input
+                name="password"
+                type="password"
+                placeholder="Your password"
+                value={formData.password}
+                onChange={handleChange}
+                style={{ ...styles.input, ...(errors.password ? styles.inputError : {}) }}
+              />
+              {errors.password && <span style={styles.error}>{errors.password}</span>}
+            </div>
 
             {serverError && (
               <div style={styles.serverError}>{serverError}</div>
@@ -136,6 +152,7 @@ export default function LoginPage() {
   );
 }
 
+// Styles remain identical to your beautifully designed constants
 const styles = {
   page: { display: "flex", minHeight: "100vh", fontFamily: "'DM Sans', sans-serif", background: "#F8FAFC" },
   left: {
